@@ -1,10 +1,5 @@
 {
   "title": "日常安全习惯自测",
-	
-	"_pass_score说明": "通过分，达到此分为通过",
-	"_correct_score说明": "答对得分",
-	"_correct_score说明": "答错扣分",
-	
   "pass_score": 50,
   "yes_text": "是",
   "no_text": "否",
