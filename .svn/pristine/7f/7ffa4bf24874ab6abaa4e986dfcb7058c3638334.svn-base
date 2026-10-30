@@ -1,0 +1,2 @@
+0000000000000000000000000000000000000000 1943556458b2a6bffaccf34a15dd5bf0ce7e5a99 DESKTOP-9HGHVQA\Administrator <ws8638@126.com> 1793365642 +0800	commit (initial): fix: remove android-actions, use built-in sdkmanager
+1943556458b2a6bffaccf34a15dd5bf0ce7e5a99 4701b2fd5b8de8bcb843016b94eab3b0e0f67844 DESKTOP-9HGHVQA\Administrator <ws8638@126.com> 1793366297 +0800	commit: fix: add sdkmanager to PATH
