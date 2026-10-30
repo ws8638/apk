@@ -1,5 +1,9 @@
 《用github生成apk》
 
+注意：
+.github 文件夹是手动创建的
+
+
 # 更新题库并重新生成 APK 操作说明
 
 ## 一、题库文件位置
@@ -50,3 +54,4 @@ https://github.com/ws8638/apk/actions
 - 修改 `questions.json` 时，确保 JSON 格式正确（括号、引号、逗号不能少）
 - 每次修改后必须执行 `git add .` → `git commit` → `git push` 三步，云端才会重新构建
 - APK 文件名固定为 `app-debug.apk`，无需签名即可安装到手机测试
+
