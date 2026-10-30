@@ -1,0 +1,78 @@
+{
+  "title": "日常安全习惯自测",
+  "pass_score": 18,
+  "yes_text": "是",
+  "no_text": "否",
+  "questions": [
+    {
+      "id": 1,
+      "text": "我会定期备份手机和电脑中的重要文件。",
+      "answer": "yes",
+      "correct_score": 3,
+      "wrong_penalty": 2
+    },
+    {
+      "id": 2,
+      "text": "收到「中奖」短信时，我会点击短信里的链接查看详情。",
+      "answer": "no",
+      "correct_score": 3,
+      "wrong_penalty": 2
+    },
+    {
+      "id": 3,
+      "text": "离开房间或睡觉前，我会检查燃气和电器是否关闭。",
+      "answer": "yes",
+      "correct_score": 3,
+      "wrong_penalty": 2
+    },
+    {
+      "id": 4,
+      "text": "我会用同一个简单密码登录所有网站和 App。",
+      "answer": "no",
+      "correct_score": 3,
+      "wrong_penalty": 2
+    },
+    {
+      "id": 5,
+      "text": "遇到陌生来电要求转账时，我会先核实对方身份。",
+      "answer": "yes",
+      "correct_score": 3,
+      "wrong_penalty": 2
+    },
+    {
+      "id": 6,
+      "text": "我会把快递单上的姓名、电话、地址直接扔进垃圾桶。",
+      "answer": "no",
+      "correct_score": 3,
+      "wrong_penalty": 2
+    },
+    {
+      "id": 7,
+      "text": "手机系统或应用提示更新时，我会及时升级。",
+      "answer": "yes",
+      "correct_score": 3,
+      "wrong_penalty": 2
+    },
+    {
+      "id": 8,
+      "text": "连接公共 WiFi 时，我会直接登录网银进行转账。",
+      "answer": "no",
+      "correct_score": 3,
+      "wrong_penalty": 2
+    },
+    {
+      "id": 9,
+      "text": "家里备有灭火器，并且我知道如何使用它。",
+      "answer": "yes",
+      "correct_score": 3,
+      "wrong_penalty": 2
+    },
+    {
+      "id": 10,
+      "text": "骑电动车时，我会佩戴安全头盔。",
+      "answer": "yes",
+      "correct_score": 3,
+      "wrong_penalty": 2
+    }
+  ]
+}
