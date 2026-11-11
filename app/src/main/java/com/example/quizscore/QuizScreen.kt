@@ -21,6 +21,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,7 +38,7 @@ private const val YES_CHAR = '1'
 private const val NO_CHAR = '0'
 
 @Composable
-fun QuizScreen(quiz: Quiz) {
+fun QuizScreen(quiz: Quiz, onImport: () -> Unit) {
     // 已答题目按顺序拼成的字符串，如 "11 0"；长度即已答题数
     var answered by rememberSaveable { mutableStateOf("") }
     // 是否正在显示上一题的对错反馈
@@ -64,11 +65,20 @@ fun QuizScreen(quiz: Quiz) {
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            Text(
-                text = quiz.title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = quiz.title,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                TextButton(onClick = onImport) {
+                    Text("导入题库")
+                }
+            }
             Spacer(Modifier.height(4.dp))
             Text(
                 text = "共 $total 题 · 满分 ${quiz.maxScore} 分",
@@ -319,7 +329,7 @@ private fun EmptyView() {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "请在 assets/questions.json 的 questions 数组中添加题目",
+            text = "题库为空。请检查 questions 数组，或点「导入题库」重新选择 questions.json",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

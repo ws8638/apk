@@ -1,7 +1,10 @@
 package com.example.quizscore
 
 import android.content.Context
+import android.net.Uri
+import android.util.Log
 import org.json.JSONObject
+import java.io.File
 
 /** 一道题：只有「是 / 否」两个选项。 */
 data class Question(
@@ -36,12 +39,53 @@ data class Quiz(
  */
 object QuizLoader {
 
-    private const val ASSET_FILE = "questions.json"
+    private const val TAG = "QuizLoader"
+    private const val FILE_NAME = "questions.json"
 
+    /**
+     * 读取题库。优先使用「外部文件」，找不到再回退到 APK 内置 assets。
+     *
+     * 外部文件位于应用专属外部目录（Android 10+ 免存储权限）：
+     *   /sdcard/Android/data/<applicationId>/files/questions.json
+     * 用 `adb push` 或支持访问 Android/data 的文件管理器替换它，即可在
+     * 【不重新打包、不重装 APK】的情况下更新题库。
+     */
     fun load(context: Context): Result<Quiz> = runCatching {
-        val raw = context.assets.open(ASSET_FILE).bufferedReader().use { it.readText() }
-        parse(raw)
+        val external = externalFile(context)
+        val (raw, source) = if (external != null && external.isFile) {
+            external.readText() to external.absolutePath
+        } else {
+            context.assets.open(FILE_NAME).bufferedReader().use { it.readText() } to "assets/$FILE_NAME"
+        }
+        Log.i(TAG, "题库来源: $source")
+        try {
+            parse(raw)
+        } catch (e: Exception) {
+            throw IllegalStateException("来源「$source」解析失败：${e.message}", e)
+        }
     }
+
+    /**
+     * SAF 导入：读取用户选中的 json → 校验通过后写入应用专属外部目录，
+     * 之后每次启动都会自动加载这份新题库（也可用 adb push 覆盖）。
+     * 校验失败则不落盘，避免用坏文件覆盖掉现有可用的题库。
+     */
+    fun importFromUri(context: Context, uri: Uri): Result<Quiz> = runCatching {
+        val raw = context.contentResolver.openInputStream(uri)
+            ?.bufferedReader()?.use { it.readText() }
+            ?: throw IllegalStateException("无法读取所选文件")
+        val quiz = parse(raw)
+        val target = externalFile(context)
+            ?: throw IllegalStateException("外部题库目录不可用")
+        target.parentFile?.mkdirs()
+        target.writeText(raw)
+        Log.i(TAG, "已导入题库并写入: ${target.absolutePath}")
+        quiz
+    }
+
+    /** 应用专属外部目录下的题库文件；getExternalFilesDir 返回 null 时（罕见）视为无外部文件。 */
+    private fun externalFile(context: Context): File? =
+        context.getExternalFilesDir(null)?.let { File(it, FILE_NAME) }
 
     fun parse(raw: String): Quiz {
         val root = JSONObject(raw)
