@@ -1,90 +1,90 @@
 {
-  "title": "日常安全习惯自测",
-	
-	"_pass_score说明": "通过分，达到此分为通过",
-	"_correct_score说明": "答对得分",
-	"_correct_score说明": "答错扣分",
-	
-  "pass_score": 50,
-  "yes_text": "是",
-  "no_text": "否",
+  "title": "炒股入场条件自测",
+  "_说明": "单选题。options 为 2~4 个选项，其中有且仅有一个 correct=true 表示正确答案。评分已取消，做完统一提交后批改。",
   "questions": [
     {
-      "id": 1,
-      "text": "最安全的进场点：5日线拐头向上，斜上穿进实体阳线",
-      "answer": "yes",
-      "correct_score": 10,		
-      "wrong_penalty": 10
+      "text": "炒股第一步：大盘和个股，画出支撑线、压力线；标记5日线、10日线、30日线",
+      "options": [
+        { "text": "对", "correct": true },
+        { "text": "错" }
+      ]
     },
     {
-      "id": 2,
       "text": "大盘周线不能是左侧交易",
-      "answer": "yes",
-      "correct_score": 10,
-      "wrong_penalty": 10
+      "options": [
+        { "text": "对", "correct": true },
+        { "text": "错" }
+      ]
     },
     {
-      "id": 3,
-      "text": "大盘日线是右侧交易",
-      "answer": "yes",
-      "correct_score": 10,
-      "wrong_penalty": 10
+      "text": "大盘日线不能是左侧交易",
+      "options": [
+        { "text": "对", "correct": true },
+        { "text": "错" }
+      ]
     },
     {
-      "id": 4,
       "text": "大盘周线10日线位于30日线上方",
-      "answer": "yes",
-      "correct_score": 10,
-      "wrong_penalty": 10
+      "options": [
+        { "text": "对", "correct": true },
+        { "text": "错" }
+      ]
     },
     {
-      "id": 5,
       "text": "大盘日线10日线位于30日线上方",
-      "answer": "yes",
-      "correct_score": 10,
-      "wrong_penalty": 10
+      "options": [
+        { "text": "对", "correct": true },
+        { "text": "错" }
+      ]
     },
     {
-      "id": 6,
       "text": "大盘日线位于支撑位附近",
-      "answer": "no",
-      "correct_score": 10,
-      "wrong_penalty": 10
+      "options": [
+        { "text": "对" },
+        { "text": "错", "correct": true }
+      ]
     },
     {
-      "id": 7,
-      "text": "大盘日线位于压力位附近",
-      "answer": "yes",
-      "correct_score": 10,
-      "wrong_penalty": 10
+      "text": "大盘日线不能位于压力位附近",
+      "options": [
+        { "text": "对", "correct": true },
+        { "text": "错" }
+      ]
     },
     {
-      "id": 8,
       "text": "大盘周线位于5日线上方",
-      "answer": "yes",
-      "correct_score": 10,
-      "wrong_penalty": 10
+      "options": [
+        { "text": "对", "correct": true },
+        { "text": "错" }
+      ]
     },
     {
-      "id": 9,
       "text": "大盘日线和周线趋势统一，没有分歧",
-      "answer": "yes",
-      "correct_score": 10,
-      "wrong_penalty": 10
+      "options": [
+        { "text": "对", "correct": true },
+        { "text": "错" }
+      ]
     },
     {
-      "id": 10,
       "text": "大盘周线站上30日线",
-      "answer": "yes",
-      "correct_score": 10,
-      "wrong_penalty": 50
+      "options": [
+        { "text": "对", "correct": true },
+        { "text": "错" }
+      ]
     },
     {
-      "id": 11,
       "text": "大盘日线30日线趋势向上",
-      "answer": "yes",
-      "correct_score": 10,
-      "wrong_penalty": 10
-    }		
+      "options": [
+        { "text": "对", "correct": true },
+        { "text": "错" }
+      ]
+    },
+    {
+      "text": "最安全的进场点：5日线拐头向上，斜上穿进实体阳线",
+      "options": [
+        { "text": "对", "correct": true },
+        { "text": "错" }
+      ]
+    }
   ]
 }

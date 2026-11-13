@@ -6,36 +6,30 @@ import android.util.Log
 import org.json.JSONObject
 import java.io.File
 
-/** 一道题：只有「是 / 否」两个选项。 */
-data class Question(
-    /** 题干 */
+/** 一个选项。correct=true 表示它是本题唯一正确答案。 */
+data class Option(
     val text: String,
-    /** 正确答案：true 表示选「是」 */
-    val answerIsYes: Boolean,
-    /** 答对加分 */
-    val correctScore: Int,
-    /** 答错扣分（正数，扣分时减掉） */
-    val wrongPenalty: Int,
+    val correct: Boolean,
 )
 
-/** 一套题。 */
-data class Quiz(
-    val title: String,
-    /** 通过分；JSON 中不写则为 null（不判定通过与否） */
-    val passScore: Int?,
-    /** 「是」按钮文案 */
-    val yesText: String,
-    /** 「否」按钮文案 */
-    val noText: String,
-    val questions: List<Question>,
+/** 一道单选题：题干 + 2~4 个选项，其中有且仅有一个 correct=true。 */
+data class Question(
+    val text: String,
+    val options: List<Option>,
 ) {
-    /** 满分 = 所有题答对得分之和 */
-    val maxScore: Int get() = questions.sumOf { it.correctScore }
+    /** 正确选项的下标（parse 已保证恰有一个，故不会为 -1）。 */
+    val correctIndex: Int get() = options.indexOfFirst { it.correct }
 }
 
+/** 一套题。评分系统已移除：只判对错、不打分。 */
+data class Quiz(
+    val title: String,
+    val questions: List<Question>,
+)
+
 /**
- * 从 assets/questions.json 读取题库。
- * 增删题目只需要修改这个 JSON 文件，无需改代码。
+ * 题库读取 / SAF 导入 / JSON 解析。
+ * 增删题目只需修改 questions.json，无需改代码。
  */
 object QuizLoader {
 
@@ -47,8 +41,8 @@ object QuizLoader {
      *
      * 外部文件位于应用专属外部目录（Android 10+ 免存储权限）：
      *   /sdcard/Android/data/<applicationId>/files/questions.json
-     * 用 `adb push` 或支持访问 Android/data 的文件管理器替换它，即可在
-     * 【不重新打包、不重装 APK】的情况下更新题库。
+     * 用「导入题库」按钮或 `adb push` 替换它，即可在【不重新打包、不重装 APK】
+     * 的情况下更新题库。
      */
     fun load(context: Context): Result<Quiz> = runCatching {
         val external = externalFile(context)
@@ -94,29 +88,36 @@ object QuizLoader {
         val questions = buildList {
             for (i in 0 until array.length()) {
                 val item = array.getJSONObject(i)
-                val answer = item.optString("answer", "yes").trim().lowercase()
-                require(answer == "yes" || answer == "no") {
-                    "第 ${i + 1} 题的 answer 只能是 yes 或 no，当前为「$answer」"
+                val qText = item.optString("text").trim()
+                require(qText.isNotEmpty()) { "第 ${i + 1} 题缺少 text（题干）" }
+
+                val optArray = item.optJSONArray("options")
+                    ?: throw IllegalArgumentException("第 ${i + 1} 题缺少 options（选项数组）")
+                require(optArray.length() in 2..4) {
+                    "第 ${i + 1} 题的选项数量必须是 2~4 个，当前为 ${optArray.length()} 个"
                 }
-                require(!item.optString("text").isNullOrBlank()) {
-                    "第 ${i + 1} 题缺少 text（题干）"
+
+                val options = buildList {
+                    for (j in 0 until optArray.length()) {
+                        val opt = optArray.getJSONObject(j)
+                        val oText = opt.optString("text").trim()
+                        require(oText.isNotEmpty()) { "第 ${i + 1} 题第 ${j + 1} 个选项缺少 text" }
+                        add(Option(text = oText, correct = opt.optBoolean("correct", false)))
+                    }
                 }
-                add(
-                    Question(
-                        text = item.getString("text").trim(),
-                        answerIsYes = answer == "yes",
-                        correctScore = item.optInt("correct_score", 1),
-                        wrongPenalty = item.optInt("wrong_penalty", 1),
-                    )
-                )
+
+                val correctCount = options.count { it.correct }
+                require(correctCount == 1) {
+                    if (correctCount == 0) "第 ${i + 1} 题没有任何选项标记 correct=true，单选题必须恰有一个正确答案"
+                    else "第 ${i + 1} 题有 $correctCount 个 correct=true，单选题必须恰有一个正确答案"
+                }
+
+                add(Question(text = qText, options = options))
             }
         }
 
         return Quiz(
-            title = root.optString("title", "是/否打分"),
-            passScore = if (root.has("pass_score")) root.optInt("pass_score") else null,
-            yesText = root.optString("yes_text", "是"),
-            noText = root.optString("no_text", "否"),
+            title = root.optString("title", "选择题自测"),
             questions = questions,
         )
     }

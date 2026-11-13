@@ -1,5 +1,6 @@
 package com.example.quizscore
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,9 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -33,37 +32,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-/** 记录答案的编码：'1' = 是，'0' = 否 */
-private const val YES_CHAR = '1'
-private const val NO_CHAR = '0'
+/** 未作答的编码字符 */
+private const val UNANSWERED = '.'
 
+/** 第 index 个选项的字母标号：A / B / C / D */
+private fun letterOf(index: Int): Char = 'A' + index
+
+/**
+ * 答题页。作答阶段只显示选项、不显示对错；全部作答后提交，
+ * 进入结果页统一批改，错题可点开查看正确答案。评分系统已移除。
+ */
 @Composable
 fun QuizScreen(quiz: Quiz, onImport: () -> Unit) {
-    // 已答题目按顺序拼成的字符串，如 "11 0"；长度即已答题数
-    var answered by rememberSaveable { mutableStateOf("") }
-    // 是否正在显示上一题的对错反馈
-    var showFeedback by rememberSaveable { mutableStateOf(false) }
+    val total = quiz.questions.size
+    // 每个字符对应一题：UNANSWERED 表示未作答，'0'..'3' 表示选中的下标
+    var answers by rememberSaveable { mutableStateOf(UNANSWERED.toString().repeat(total)) }
+    var currentIndex by rememberSaveable { mutableStateOf(0) }
+    var submitted by rememberSaveable { mutableStateOf(false) }
 
-    val questions = quiz.questions
-    val total = questions.size
-    val answeredCount = answered.length
-    val finished = total > 0 && answeredCount == total && !showFeedback
-
-    // 得分 = 每题答对加 correct_score，答错扣 wrong_penalty
-    val score = remember(answered, quiz) {
-        answered.mapIndexed { index, char ->
-            val question = questions[index]
-            if ((char == YES_CHAR) == question.answerIsYes) question.correctScore
-            else -question.wrongPenalty
-        }.sum()
-    }
+    val answeredCount = answers.count { it != UNANSWERED }
+    val allAnswered = total > 0 && answeredCount == total
 
     Surface(Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp)
+                .padding(20.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -81,7 +76,7 @@ fun QuizScreen(quiz: Quiz, onImport: () -> Unit) {
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "共 $total 题 · 满分 ${quiz.maxScore} 分",
+                text = "共 $total 题 · 已作答 $answeredCount 题",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -89,34 +84,26 @@ fun QuizScreen(quiz: Quiz, onImport: () -> Unit) {
 
             when {
                 total == 0 -> EmptyView()
-                finished -> ResultView(
+                submitted -> ResultsView(
                     quiz = quiz,
-                    answers = answered,
-                    score = score,
+                    answers = answers,
                     onRestart = {
-                        answered = ""
-                        showFeedback = false
+                        answers = UNANSWERED.toString().repeat(total)
+                        currentIndex = 0
+                        submitted = false
                     },
                 )
                 else -> {
-                    val currentIndex = if (showFeedback) answeredCount - 1 else answeredCount
-                    val question = questions[currentIndex]
+                    val safeIndex = currentIndex.coerceIn(0, total - 1)
+                    val question = quiz.questions[safeIndex]
+                    val selectedChar = answers[safeIndex]
+                    val selected = if (selectedChar == UNANSWERED) -1 else selectedChar - '0'
+                    val isLast = safeIndex == total - 1
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            text = "第 ${currentIndex + 1} / $total 题",
-                            style = MaterialTheme.typography.titleSmall,
-                        )
-                        Text(
-                            text = "当前得分 $score",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
+                    Text(
+                        text = "第 ${safeIndex + 1} / $total 题",
+                        style = MaterialTheme.typography.titleSmall,
+                    )
                     Spacer(Modifier.height(10.dp))
                     LinearProgressIndicator(
                         progress = { answeredCount.toFloat() / total },
@@ -136,47 +123,58 @@ fun QuizScreen(quiz: Quiz, onImport: () -> Unit) {
                             style = MaterialTheme.typography.titleMedium,
                         )
                     }
+                    Spacer(Modifier.height(16.dp))
+
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        question.options.forEachIndexed { index, option ->
+                            if (index == selected) {
+                                Button(
+                                    onClick = {
+                                        answers = answers.replaceRange(safeIndex, safeIndex + 1, "$index")
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text("${letterOf(index)}  ${option.text}")
+                                }
+                            } else {
+                                OutlinedButton(
+                                    onClick = {
+                                        answers = answers.replaceRange(safeIndex, safeIndex + 1, "$index")
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text("${letterOf(index)}  ${option.text}")
+                                }
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(24.dp))
 
-                    if (!showFeedback) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        ) {
-                            Button(
-                                onClick = {
-                                    answered += YES_CHAR
-                                    showFeedback = true
-                                },
-                                modifier = Modifier.weight(1f),
-                            ) {
-                                Text(quiz.yesText)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        OutlinedButton(onClick = { currentIndex -= 1 }, enabled = safeIndex > 0) {
+                            Text("上一题")
+                        }
+                        if (isLast) {
+                            Button(onClick = { submitted = true }, enabled = allAnswered) {
+                                Text("提交答卷")
                             }
-                            OutlinedButton(
-                                onClick = {
-                                    answered += NO_CHAR
-                                    showFeedback = true
-                                },
-                                modifier = Modifier.weight(1f),
-                            ) {
-                                Text(quiz.noText)
+                        } else {
+                            Button(onClick = { currentIndex += 1 }) {
+                                Text("下一题")
                             }
                         }
-                    } else {
-                        val userSaysYes = answered.last() == YES_CHAR
-                        val isCorrect = userSaysYes == question.answerIsYes
-                        FeedbackView(
-                            isCorrect = isCorrect,
-                            delta = if (isCorrect) question.correctScore else -question.wrongPenalty,
-                            correctText = if (question.answerIsYes) quiz.yesText else quiz.noText,
+                    }
+                    if (isLast && !allAnswered) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "还有 ${total - answeredCount} 题未作答，全部作答后才能提交",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
                         )
-                        Spacer(Modifier.height(16.dp))
-                        Button(
-                            onClick = { showFeedback = false },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text(if (answeredCount == total) "查看结果" else "下一题")
-                        }
                     }
                 }
             }
@@ -185,44 +183,13 @@ fun QuizScreen(quiz: Quiz, onImport: () -> Unit) {
 }
 
 @Composable
-private fun FeedbackView(isCorrect: Boolean, delta: Int, correctText: String) {
-    val container = if (isCorrect) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.errorContainer
+private fun ResultsView(quiz: Quiz, answers: String, onRestart: () -> Unit) {
+    val questions = quiz.questions
+    val correctCount = questions.countIndexed { index, q ->
+        answers[index] != UNANSWERED && (answers[index] - '0') == q.correctIndex
     }
-    val content = if (isCorrect) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onErrorContainer
-    }
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = container,
-        contentColor = content,
-        shape = RoundedCornerShape(12.dp),
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(
-                text = if (isCorrect) "回答正确，${signed(delta)} 分" else "回答错误，${signed(delta)} 分",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            if (!isCorrect) {
-                Spacer(Modifier.height(4.dp))
-                Text("正确答案：$correctText", style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-    }
-}
+    val total = questions.size
 
-@Composable
-private fun ResultView(
-    quiz: Quiz,
-    answers: String,
-    score: Int,
-    onRestart: () -> Unit,
-) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -235,74 +202,59 @@ private fun ResultView(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("最终得分", style = MaterialTheme.typography.labelLarge)
+            Text("答题结果", style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "$score",
-                style = MaterialTheme.typography.displayMedium,
+                text = "答对 $correctCount / $total 题",
+                style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
             )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "满分 ${quiz.maxScore} 分",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            quiz.passScore?.let { pass ->
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = if (score >= pass) "通过（通过分 $pass）" else "未通过（通过分 $pass）",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = if (score >= pass) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.error
-                    },
-                )
-            }
         }
     }
     Spacer(Modifier.height(16.dp))
     Button(onClick = onRestart, modifier = Modifier.fillMaxWidth()) {
-        Text("重新开始")
+        Text("重新作答")
     }
     Spacer(Modifier.height(24.dp))
 
-    Text("答题明细", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    Text(
+        text = "错题可点击展开，查看正确答案",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
     Spacer(Modifier.height(8.dp))
 
-    quiz.questions.forEachIndexed { index, question ->
-        val userSaysYes = answers[index] == YES_CHAR
-        val isCorrect = userSaysYes == question.answerIsYes
-        val delta = if (isCorrect) question.correctScore else -question.wrongPenalty
+    questions.forEachIndexed { index, question ->
+        val selectedChar = answers[index]
+        val selected = if (selectedChar == UNANSWERED) -1 else selectedChar - '0'
+        val isCorrect = selected == question.correctIndex
+        val wrong = !isCorrect
+        var expanded by remember { mutableStateOf(wrong) }
 
         OutlinedCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 6.dp),
+                .padding(vertical = 6.dp)
+                .clickable { expanded = !expanded },
         ) {
             Column(Modifier.padding(16.dp)) {
-                Text(text = "${index + 1}. ${question.text}", style = MaterialTheme.typography.bodyLarge)
-                Spacer(Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "你的回答：${if (userSaysYes) quiz.yesText else quiz.noText}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = "${index + 1}. ${question.text}",
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyLarge,
                     )
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.height(0.dp))
                     Text(
-                        text = "正确答案：${if (question.answerIsYes) quiz.yesText else quiz.noText}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Text(
-                        text = signed(delta),
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = when {
+                            isCorrect -> "  ✓"
+                            selected == -1 -> "  未作答"
+                            else -> "  ✗"
+                        },
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = if (isCorrect) {
                             MaterialTheme.colorScheme.primary
@@ -310,6 +262,30 @@ private fun ResultView(
                             MaterialTheme.colorScheme.error
                         },
                     )
+                }
+                if (expanded) {
+                    Spacer(Modifier.height(12.dp))
+                    question.options.forEachIndexed { optIndex, option ->
+                        val isRight = optIndex == question.correctIndex
+                        val isUserWrongPick = optIndex == selected && !isRight
+                        Text(
+                            text = buildString {
+                                append("${letterOf(optIndex)}  ${option.text}")
+                                if (isRight) append("   ← 正确答案")
+                                if (isUserWrongPick) append("   （你的选择）")
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (isRight) FontWeight.Bold else FontWeight.Normal,
+                            color = when {
+                                isRight -> MaterialTheme.colorScheme.primary
+                                isUserWrongPick -> MaterialTheme.colorScheme.error
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -323,10 +299,7 @@ private fun EmptyView() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(40.dp))
-        Text(
-            text = "题库中没有题目",
-            style = MaterialTheme.typography.titleMedium,
-        )
+        Text("题库中没有题目", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
         Text(
             text = "题库为空。请检查 questions 数组，或点「导入题库」重新选择 questions.json",
@@ -336,5 +309,9 @@ private fun EmptyView() {
     }
 }
 
-/** 把分值格式化为 "+3" / "-2" */
-private fun signed(value: Int): String = if (value >= 0) "+$value" else "$value"
+/** 带下标的 count，避免额外引入 index 遍历样板。 */
+private inline fun <T> List<T>.countIndexed(predicate: (Int, T) -> Boolean): Int {
+    var count = 0
+    forEachIndexed { index, item -> if (predicate(index, item)) count++ }
+    return count
+}
