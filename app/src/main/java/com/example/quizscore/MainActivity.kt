@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -35,7 +36,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme(
-                colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
+                colorScheme = appColorScheme(isSystemInDarkTheme())
             ) {
                 QuizApp()
             }
@@ -102,4 +103,21 @@ private fun ErrorScreen(message: String?, onImport: () -> Unit) {
             }
         }
     }
+}
+
+/** App 主题配色：把品牌主色换成淡蓝色，其余沿用 Material3 中性色。 */
+private fun appColorScheme(dark: Boolean) = if (dark) {
+    darkColorScheme().copy(
+        primary = Color(0xFF8AB4E8),
+        onPrimary = Color(0xFF002E5A),
+        primaryContainer = Color(0xFF1B3A5C),
+        onPrimaryContainer = Color(0xFFD6E9FB),
+    )
+} else {
+    lightColorScheme().copy(
+        primary = Color(0xFF4A90D9),
+        onPrimary = Color(0xFFFFFFFF),
+        primaryContainer = Color(0xFFD6E9FB),
+        onPrimaryContainer = Color(0xFF002E5A),
+    )
 }
